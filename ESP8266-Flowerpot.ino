@@ -1,21 +1,60 @@
+
 #define BLYNK_TEMPLATE_ID "TMPL4GTYTeakI"
 #define BLYNK_TEMPLATE_NAME "ESp8266 LED blink"
+#define BLYNK_AUTH_TOKEN "lq_hZ-Myf6ZGvKzGNTxo7_tnT-l7ktA-"
 
 #define BLYNK_PRINT Serial
 #include <ESP8266WiFi.h>
 #include <BlynkSimpleEsp8266.h>
-#include <EEPROM.h>
-
-// Pin definitions
-#define LED_PIN D1
-#define HUMIDITY_PIN A0
+#include <TimeLib.h>
+#include <WidgetRTC.h>
 
 // Credentials will be stored in EEPROM
 char auth[33];  // Blynk auth token
 char ssid[33];  // WiFi SSID
 char pass[65];  // WiFi password
 
+int turnOnHour = 0;    // Store the hour to turn on LED
+int turnOffHour = 0;   // Store the hour to turn off LED
+unsigned long lastTimeCheck = 0;  // Last time we checked the time
+
+// Pin definitions
+#define MANUAL_LED_PIN D2
+#define ALERT_LED_PIN D1
+#define HUMIDITY_PIN A0
+
+// Sensor calibration values
+#define SENSOR_DRY 10    // Value when completely dry
+#define SENSOR_WET 890     // Value when water level is full
+
+// Global variables
+int waterThreshold = 50;
 BlynkTimer timer;
+
+BLYNK_WRITE(V3) {
+  turnOnHour = param.asInt();
+  Serial.print("LED Turn ON hour set to: ");
+  Serial.println(turnOnHour);
+}
+
+BLYNK_WRITE(V4) {
+  turnOffHour = param.asInt();
+  Serial.print("LED Turn OFF hour set to: ");
+  Serial.println(turnOffHour);
+}
+
+// Water level threshold control from Blynk app
+BLYNK_WRITE(V1) {
+  waterThreshold = param.asInt();
+  Serial.print("New water threshold set to: ");
+  Serial.println(waterThreshold);
+}
+
+// Manual LED control
+BLYNK_WRITE(V0) {
+  digitalWrite(MANUAL_LED_PIN, param.asInt());
+  Serial.printf("Manual LED state changed to: %s\n", param.asInt() ? "ON" : "OFF");
+}
 
 void loadCredentials() {
   EEPROM.begin(512);
@@ -44,68 +83,128 @@ byte decryptByte(byte data) {
   return data ^ 0xA7;  // Use the same encryption key as in the EEPROM writer
 }
 
+float getAverageWaterLevel() {
+  float sum = 0;
+  const int samples = 10;
+  
+  // Take multiple readings
+  for(int i = 0; i < samples; i++) {
+    sum += analogRead(HUMIDITY_PIN);
+    delay(10);
+  }
+  
+  // Calculate average
+  float averageReading = sum / samples;
+  
+
+  
+  // Constrain the reading between wet and dry values
+  averageReading = constrain(averageReading, SENSOR_DRY, SENSOR_WET);
+  
+  // Calculate percentage
+  float percentage = map(averageReading, SENSOR_DRY, SENSOR_WET, 100, 0);
+  
+  // Ensure the percentage stays within 0-100 range
+  percentage = constrain(percentage, 0, 100);
+  
+  return percentage;
+}
+
+void checkWaterLevelAndUpdateLED(float waterLevel) {
+  if (waterLevel > waterThreshold) {
+    digitalWrite(ALERT_LED_PIN, HIGH);
+    Serial.println("ALERT: Water level below threshold!");
+    Blynk.virtualWrite(V2, 1);
+  } else {
+    digitalWrite(ALERT_LED_PIN, LOW);
+    Blynk.virtualWrite(V2, 0);
+  }
+}
+
 void sendSensorData() {
-  int rawValue = analogRead(HUMIDITY_PIN);
+  float waterLevel = getAverageWaterLevel();
   
-  // Add some bounds checking
-  if(rawValue < 0) rawValue = 0;
-  if(rawValue > 1023) rawValue = 1023;
+  // Send water level to Blynk using A0
+  Blynk.virtualWrite(A0, waterLevel);
   
-  float humidityPercentage = map(rawValue, 0, 1023, 0, 100);
+  // Check water level and update alert LED
+  checkWaterLevelAndUpdateLED(waterLevel);
   
-  Blynk.virtualWrite(V1, humidityPercentage);
-  
-  Serial.print("Humidity: ");
-  Serial.print(humidityPercentage);
+  // Debug output
+  Serial.print("Raw Reading: ");
+  Serial.print(analogRead(HUMIDITY_PIN));
+  Serial.print(" | Water Level: ");
+  Serial.print(waterLevel);
+  Serial.print("% | Threshold: ");
+  Serial.print(waterThreshold);
   Serial.println("%");
 }
 
-BLYNK_WRITE(V0) {
-  int ledState = param.asInt();
-  if(ledState == 0 || ledState == 1) {  // Input validation
-    digitalWrite(LED_PIN, ledState);
-    Serial.printf("LED state changed to: %s\n", ledState ? "ON" : "OFF");
+void checkTimeAndUpdateLED() {
+  // Check time every minute (60000 milliseconds)
+  if (millis() - lastTimeCheck >= 60000) {
+    lastTimeCheck = millis();
+    
+    // Get the current time from Blynk server
+    int currentHour = hour();
+    
+    // Check if we should turn the LED on or off based on time
+    if (turnOnHour < turnOffHour) {
+      // Simple case: turn on if time is between on and off hours
+      if (currentHour >= turnOnHour && currentHour < turnOffHour) {
+        digitalWrite(MANUAL_LED_PIN, HIGH);
+        Blynk.virtualWrite(V0, 1);
+      } else {
+        digitalWrite(MANUAL_LED_PIN, LOW);
+        Blynk.virtualWrite(V0, 0);
+      }
+    } else if (turnOnHour > turnOffHour) {
+      // Complex case: turn on if time is after on hour OR before off hour
+      if (currentHour >= turnOnHour || currentHour < turnOffHour) {
+        digitalWrite(MANUAL_LED_PIN, HIGH);
+        Blynk.virtualWrite(V0, 1);
+      } else {
+        digitalWrite(MANUAL_LED_PIN, LOW);
+        Blynk.virtualWrite(V0, 0);
+      }
+    }
   }
 }
 
 void setup() {
   Serial.begin(115200);
-  pinMode(LED_PIN, OUTPUT);
   
-  // Load credentials from EEPROM
-  loadCredentials();
+  // Initialize pins
+  pinMode(MANUAL_LED_PIN, OUTPUT);
+  pinMode(ALERT_LED_PIN, OUTPUT);
   
-  // Connect to Blynk with timeout
+  // Initial LED states
+  digitalWrite(MANUAL_LED_PIN, LOW);
+  digitalWrite(ALERT_LED_PIN, LOW);
+  
+  // Connect to Blynk
   Serial.println("Connecting to Blynk...");
-  unsigned long startAttempt = millis();
-  
   Blynk.begin(auth, ssid, pass, "blynk.cloud", 80);
-  
-  while (!Blynk.connected() && millis() - startAttempt < 30000) {
-    delay(100);
-  }
   
   if (Blynk.connected()) {
     Serial.println("Connected to Blynk!");
-  } else {
-    Serial.println("Failed to connect to Blynk");
   }
   
+  // Setup timer for sensor readings (every 2 seconds)
   timer.setInterval(2000L, sendSensorData);
+
+  // Sync time with Blynk server
+  setSyncInterval(24 * 60 * 60); // Sync every day
 }
 
 void loop() {
-  static unsigned long lastReconnectAttempt = 0;
-  
   if (Blynk.connected()) {
     Blynk.run();
     timer.run();
+    checkTimeAndUpdateLED();  // Add this line
   } else {
-    // Try to reconnect every 5 seconds
-    if (millis() - lastReconnectAttempt > 5000) {
-      lastReconnectAttempt = millis();
-      Serial.println("Blynk connection lost! Reconnecting...");
-      Blynk.connect();
-    }
+    Serial.println("Blynk connection lost! Reconnecting...");
+    Blynk.connect();
+    delay(1000);
   }
 }
