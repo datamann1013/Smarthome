@@ -48,6 +48,8 @@
 - USB cable for programming
 
 # Pin Connections
+![Skjermbilde 2025-01-26 164451.png](Skjermbilde%202025-01-26%20164451.png)
+
 - Manual Control LED → D2 (with 220Ω resistor)
 - Alert LED → D1 (with 220Ω resistor)
 - Soil Moisture Sensor → A0
