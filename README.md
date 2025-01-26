@@ -2,6 +2,10 @@
 
 ### A smart plant monitoring system using ESP8266, Blynk IoT platform, and soil moisture sensor.
 
+![C++](https://img.shields.io/badge/C++-11-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+
 # Table of Contents
 1. [Features](#features)
 2. [Hardware Requirements](#hardware-requirements)
@@ -151,6 +155,8 @@ Adjust these values based on your sensor's readings.
 - Alert LED activates when water level goes below set threshold
 - Manual LED can be controlled independently through the Blynk app
 - Time-based LED control operates based on user-defined schedule
+- LED state changes occur within each hour
+- Supports cross-minute operation when ON second is greater than OFF second
 
 # Debugging
 - Serial output provides detailed information at 115200 baud rate

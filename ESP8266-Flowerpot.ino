@@ -14,8 +14,8 @@ char auth[33];  // Blynk auth token
 char ssid[33];  // WiFi SSID
 char pass[65];  // WiFi password
 
-int turnOnHour = 0;    // Store the hour to turn on LED
-int turnOffHour = 0;   // Store the hour to turn off LED
+int turnOnSecond = 15;    // Store the hour to turn on LED
+int turnOffSecond = 45;   // Store the hour to turn off LED
 unsigned long lastTimeCheck = 0;  // Last time we checked the time
 
 // Pin definitions
@@ -32,15 +32,15 @@ int waterThreshold = 50;
 BlynkTimer timer;
 
 BLYNK_WRITE(V3) {
-  turnOnHour = param.asInt();
+  turnOnSecond = param.asInt();
   Serial.print("LED Turn ON hour set to: ");
-  Serial.println(turnOnHour);
+  Serial.println(turnOnSecond);
 }
 
 BLYNK_WRITE(V4) {
-  turnOffHour = param.asInt();
+  turnOffSecond = param.asInt();
   Serial.print("LED Turn OFF hour set to: ");
-  Serial.println(turnOffHour);
+  Serial.println(turnOffSecond);
 }
 
 // Water level threshold control from Blynk app
@@ -141,26 +141,34 @@ void sendSensorData() {
 }
 
 void checkTimeAndUpdateLED() {
-  // Check time every minute (60000 milliseconds)
-  if (millis() - lastTimeCheck >= 60000) {
+  // Check time every 100ms instead of every minute
+  if (millis() - lastTimeCheck >= 100) {
     lastTimeCheck = millis();
     
-    // Get the current time from Blynk server
-    int currentHour = hour();
+    // Get the current second from Blynk server
+    int currentSecond = second();
+    
+    // Debug output
+    Serial.print("Current second: ");
+    Serial.print(currentSecond);
+    Serial.print(" | On at: ");
+    Serial.print(turnOnSecond);
+    Serial.print(" | Off at: ");
+    Serial.println(turnOffSecond);
     
     // Check if we should turn the LED on or off based on time
-    if (turnOnHour < turnOffHour) {
-      // Simple case: turn on if time is between on and off hours
-      if (currentHour >= turnOnHour && currentHour < turnOffHour) {
+    if (turnOnSecond < turnOffSecond) {
+      // Simple case: turn on if time is between on and off seconds
+      if (currentSecond >= turnOnSecond && currentSecond < turnOffSecond) {
         digitalWrite(MANUAL_LED_PIN, HIGH);
         Blynk.virtualWrite(V0, 1);
       } else {
         digitalWrite(MANUAL_LED_PIN, LOW);
         Blynk.virtualWrite(V0, 0);
       }
-    } else if (turnOnHour > turnOffHour) {
-      // Complex case: turn on if time is after on hour OR before off hour
-      if (currentHour >= turnOnHour || currentHour < turnOffHour) {
+    } else if (turnOnSecond > turnOffSecond) {
+      // Complex case: turn on if time is after on second OR before off second
+      if (currentSecond >= turnOnSecond || currentSecond < turnOffSecond) {
         digitalWrite(MANUAL_LED_PIN, HIGH);
         Blynk.virtualWrite(V0, 1);
       } else {
