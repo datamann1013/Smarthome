@@ -1,6 +1,8 @@
 ![GitHub Header](github-header-image.png)
 ### *A plant care system using ESP8266, Blynk IoT, and a soil moisture sensor. 🌱*
 
+📄 [Back to main README](../README.MD)
+
 ![C++](https://img.shields.io/badge/C++-11-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
