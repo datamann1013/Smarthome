@@ -1,167 +1,161 @@
-![github-header-image.png](github-header-image.png)
-
-### A smart plant monitoring system using ESP8266, Blynk IoT platform, and soil moisture sensor.
+![GitHub Header](github-header-image.png)
+### *A plant care system using ESP8266, Blynk IoT, and a soil moisture sensor. 🌱*
 
 ![C++](https://img.shields.io/badge/C++-11-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 
-# Table of Contents
-1. [Features](#features)
-2. [Hardware Requirements](#hardware-requirements)
-3. [Pin Connections](#pin-connections)
-4. [Software Requirements](#software-requirements)
-5. [Secure Credential Storage](#secure-credential-storage)
-6. [Time Control System](#time-control-system)
-7. [Blynk App Configuration](#blynk-app-configuration)
-8. [Installation Steps](#installation-steps)
-9. [System Operation](#system-operation)
-10. [Debugging](#debugging)
-11. [Security Notes](#security-notes)
-12. [Maintenance](#maintenance)
+## **Table of Contents**
+- [Features](#features)
+- [Hardware Requirements](#hardware-requirements)
+- [Pin Connections](#pin-connections)
+- [Software Requirements](#software-requirements)
+- [Secure Credential Storage](#secure-credential-storage)
+- [Time Control System](#time-control-system)
+- [Blynk App Configuration](#blynk-app-configuration)
+- [Installation Steps](#installation-steps)
+- [System Operation](#system-operation)
+- [Debugging](#debugging)
+- [Security Notes](#security-notes)
+- [Maintenance](#maintenance)
 
-# Features
-- Real-time soil moisture monitoring with averaging for accurate readings
-- Dual LED system:
-  - Manual control LED via Blynk app
-  - Automatic alert LED for water level warnings
-- Configurable watering threshold through Blynk app
-- Sophisticated time-based LED control:
-  - Customizable ON/OFF hours
-  - Handles both standard and overnight schedules
-  - Automatic synchronization with Blynk server time
-  - Minute-by-minute schedule checking
-- Secure credential storage using encrypted EEPROM
-- Real-time clock integration for time-based operations
-- Automatic reconnection handling
-- Detailed serial debugging output
-- Basic encryption for stored credentials
+## **Features**
+✅ **Real-time soil moisture monitoring** with averaged readings for accuracy.  
+✅ **Dual LED control:**
+- Manual control via Blynk app
+- Automatic alert LED for water level warnings  
+  ✅ **Configurable watering threshold** via the Blynk app.  
+  ✅ **Advanced time-based LED control:**
+- Customizable ON/OFF schedule
+- Supports both standard and overnight schedules
+- Automatic synchronization with Blynk server time  
+  ✅ **Secure credential storage** with encrypted EEPROM.  
+  ✅ **Real-time clock integration** for precise scheduling.  
+  ✅ **Automatic WiFi and Blynk reconnection handling.**  
+  ✅ **Detailed serial debugging output.**  
+  ✅ **Basic encryption for stored credentials.**
 
-# Hardware Requirements
-- ESP8266 board (NodeMCU, Wemos D1 Mini, etc.)
-- Soil moisture sensor
-- 2x LEDs:
+## **Hardware Requirements**
+- **ESP8266 board** (NodeMCU, Wemos D1 Mini, etc.)
+- **Soil moisture sensor**
+- **2x LEDs:**
   - Manual control LED
   - Alert indicator LED
-- 2x 220Ω resistors for LEDs
-- Jumper wires
-- USB cable for programming
+- **2x 220Ω resistors** (for LEDs)
+- **Jumper wires**
+- **USB cable** (for programming)
 
-# Pin Connections
-![Skjermbilde 2025-01-26 164451.png](Skjermbilde%202025-01-26%20164451.png)
+## **Pin Connections**
 
-- Manual Control LED → D2 (with 220Ω resistor)
-- Alert LED → D1 (with 220Ω resistor)
-- Soil Moisture Sensor → A0
-- VCC → 3.3V
-- GND → GND
+| Component               | ESP8266 Pin |
+|-------------------------|------------|
+| **Manual Control LED**  | D2 (via 220Ω resistor) |
+| **Alert LED**           | D1 (via 220Ω resistor) |
+| **Soil Moisture Sensor**| A0 |
+| **VCC**                 | 3.3V |
+| **GND**                 | GND |
 
-# Software Requirements
-- Arduino IDE
-- Required Libraries:
-  - ESP8266WiFi
-  - BlynkSimpleEsp8266
-  - TimeLib
-  - EEPROM
+![Wiring diagram](Wiring%20diagram.png)
 
-# Secure Credential Storage
-## Encryption System
-- Basic XOR encryption for all credentials
-- Unique encryption key (customizable)
-- Encrypted storage in EEPROM
-- Secure storage of:
-  - Blynk authentication token (32 bytes)
-  - WiFi SSID (32 bytes)
-  - WiFi password (64 bytes)
+## **Software Requirements**
+- **Arduino IDE**
+- **Required Libraries:**
+  - `ESP8266WiFi`
+  - `BlynkSimpleEsp8266`
+  - `TimeLib`
+  - `EEPROM`
 
-## Storage Layout
-- Total EEPROM allocation: 512 bytes
-- Organized storage:
-  - Bytes 0-32: Encrypted Blynk token
-  - Bytes 33-64: Encrypted WiFi SSID
-  - Bytes 65-128: Encrypted WiFi password
+## **Secure Credential Storage**
+🔒 **Encryption System**
+- Basic **XOR encryption** for credential security.
+- **Custom encryption key** (user-defined).
+- **Encrypted EEPROM storage** for:
+  - Blynk authentication token (32 bytes).
+  - WiFi SSID (32 bytes).
+  - WiFi password (64 bytes).
 
-## Security Features
-- Null-termination encryption
-- Padding for fixed-length storage
-- Verification system for stored credentials
-- Separate EEPROM writer program for initial setup
+📌 **Storage Layout**
+- **Total EEPROM allocation:** 512 bytes
+- **Data Structure:**
+  - Bytes 0-32 → Encrypted Blynk token
+  - Bytes 33-64 → Encrypted WiFi SSID
+  - Bytes 65-128 → Encrypted WiFi password
 
-# Time Control System
-## Schedule Types
-1. Standard Schedule (When ON hour < OFF hour)
-  - Example: ON at 8:00, OFF at 17:00
-  - LED operates during daytime hours
+## **Time Control System**
+⏳ **Schedule Types**
+- **Standard Schedule** (ON hour < OFF hour)
+  - Example: ON at 08:00, OFF at 17:00
+  - LED operates during the day.
+- **Overnight Schedule** (ON hour > OFF hour)
+  - Example: ON at 20:00, OFF at 06:00
+  - LED remains ON overnight.
 
-2. Overnight Schedule (When ON hour > OFF hour)
-  - Example: ON at 20:00, OFF at 6:00
-  - LED operates through night hours
+🔄 **Time Synchronization**
+- **Daily sync** with Blynk server.
+- **Minute-based schedule checking** for accuracy.
+- **Automatic state updates** to Blynk app.
+- **Failsafe reconnection** in case of connection loss.
 
-## Time Synchronization
-- Daily synchronization with Blynk server
-- Minute-resolution checking for accurate timing
-- Automatic state updates to Blynk app
-- Failsafe reconnection if server connection is lost
+## **Blynk App Configuration**
+📱 **Virtual Pins Setup**
 
-# Blynk App Configuration
-- Virtual Pin V0: Manual LED control button
-- Virtual Pin V1: Water threshold slider (0-100%)
-- Virtual Pin V2: Alert status indicator
-- Virtual Pin V3: LED ON time setting
-- Virtual Pin V4: LED OFF time setting
-- Analog Pin A0: Water level display
+| Function                  | Virtual Pin |
+|---------------------------|------------|
+| Manual LED control        | V0 |
+| Water threshold slider    | V1 (0-100%) |
+| Alert status indicator    | V2 |
+| LED ON time setting       | V3 |
+| LED OFF time setting      | V4 |
+| Water level display       | A0 |
 
-# Installation Steps
+## **Installation Steps**
+1️⃣ **Install Required Libraries**
+- Open **Arduino IDE** → Go to **Tools > Manage Libraries**
+- Install:
+  - `Blynk`
+  - `ESP8266WiFi` (comes with ESP8266 board manager)
 
-## 1. Install Required Libraries
-In Arduino IDE:
-- Go to Tools → Manage Libraries
-- Search and install:
-  - Blynk
-  - ESP8266WiFi (comes with ESP8266 board manager)
+2️⃣ **Blynk Setup**
+- Create a **new Blynk project**
+- Note down:
+  - `BLYNK_TEMPLATE_ID`
+  - `BLYNK_TEMPLATE_NAME`
+  - `BLYNK_AUTH_TOKEN`
 
-## 2. Blynk Setup
-1. Create a new Blynk project
-2. Note down your:
-  - BLYNK_TEMPLATE_ID
-  - BLYNK_TEMPLATE_NAME
-  - BLYNK_AUTH_TOKEN
+3️⃣ **Configure Credentials**
+- Open `EEPROM.ino`
+- Update the following constants:
+  ```cpp
+  const char BLYNK_AUTH[] = "YOUR_BLYNK_TOKEN";
+  const char WIFI_SSID[] = "YOUR_WIFI_SSID";
+  const char WIFI_PASS[] = "YOUR_WIFI_PASSWORD";
+  ```
+- Set a **custom encryption key:**
+  ```cpp
+  const byte encryptionKey = 0xA7;  // Change this value
+  ```
+- Upload **EEPROM writer program** first.
+- Verify **successful credential storage.**
+- Upload the **main program.**
 
-## 3. Configure Credentials
-1. Open `EEPROM.ino`
-2. Update the following constants with your values:
-```cpp
-const char BLYNK_AUTH[] = "YOUR_BLYNK_TOKEN";
-const char WIFI_SSID[] = "YOUR_WIFI_SSID";
-const char WIFI_PASS[] = "YOUR_WIFI_PASSWORD";
-```
-3. Set custom encryption key:
-```cpp
-const byte encryptionKey = 0xA7;  // Change this value
-```
-4. Upload EEPROM writer program first
-5. Verify successful credential storage
-6. Upload main program
+4️⃣ **Sensor Calibration**
+- Default values:
+  ```cpp
+  #define SENSOR_DRY 10    // Completely dry
+  #define SENSOR_WET 890   // Fully submerged
+  ```
+- Adjust these values based on your sensor readings.
 
-## 4. Sensor Calibration
-The system uses the following default calibration values:
-```cpp
-#define SENSOR_DRY 10    // Value when completely dry
-#define SENSOR_WET 890   // Value when in water
-```
-Adjust these values based on your sensor's readings.
+## **System Operation**
+⚙️ **How It Works:**
+- **Soil moisture levels** are **monitored in real-time**.
+- **Water level is displayed as a percentage** (0-100%).
+- **Alert LED activates** when the **water level drops below the threshold**.
+- **Manual LED** can be turned **on/off via Blynk app**.
+- **Time-based LED control** follows the user’s **custom ON/OFF schedule**.
 
-# System Operation
-- The system takes averaged sensor readings for improved accuracy
-- Water level is displayed as a percentage (0-100%)
-- Alert LED activates when water level goes below set threshold
-- Manual LED can be controlled independently through the Blynk app
-- Time-based LED control operates based on user-defined schedule
-- LED state changes occur within each hour
-- Supports cross-minute operation when ON second is greater than OFF second
-
-# Debugging
-- Serial output provides detailed information at 115200 baud rate
+## **Debugging**
+🔍 **Serial Debugging (115200 baud rate)**
 - Monitors:
   - Raw sensor readings
   - Calculated water levels
@@ -169,14 +163,16 @@ Adjust these values based on your sensor's readings.
   - LED states
   - Connection status
 
-# Security Notes
-- Change default encryption key before deployment
-- Verify credentials after writing
-- Keep encryption key secure
-- EEPROM has limited write cycles (~100,000)
+## **Security Notes**
+🔐 **Best Practices:**  
+✔ Change the **default encryption key** before deployment.  
+✔ Verify credentials **after writing to EEPROM**.  
+✔ Keep **encryption key secure**.  
+✔ Remember that **EEPROM has limited write cycles (~100,000).**
 
-# Maintenance
-- Regularly check soil moisture sensor calibration
-- Clean sensor probes as needed
-- Monitor serial output for system status
-- Keep Blynk app and libraries updated
+## **Maintenance**
+🛠 **Routine Checks:**
+- Regularly **calibrate the soil moisture sensor**.
+- **Clean sensor probes** to maintain accuracy.
+- Monitor **serial output** for any system errors.
+- Keep **Blynk app and libraries up to date**.  
