@@ -46,12 +46,12 @@ This project consists of multiple subsystems that work together.
 📄 More details:  [Smart Plant System README](flowerpot/README.md)
 
 
-### 2️⃣ Motion-Based Lighting System 💡
-
-- An intelligent lighting system that uses PIR motion sensors to turn lights on/off automatically.
-- Dual motion sensors (upstairs/downstairs)
-- Independent LED control for each sensor
-- Serial monitor logging for debugging
+### 2️⃣ PIR-Based Staircase Lighting System 💡
+- A motion-activated lighting system using PIR sensors for automatic illumination.
+- Dual PIR sensors to detect movement direction (upstairs/downstairs).
+- Sequential LED activation based on movement.
+- Automatic turn-off after a predefined delay.
+- Serial monitor logging for real-time debugging.
 
 📄 More details: [Motion Sensor Lighting README](staircaselighting/README.MD)
 

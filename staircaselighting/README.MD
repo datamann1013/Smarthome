@@ -1,10 +1,14 @@
-# PIR Sensor Motion Detection System
+# PIR-Based Staircase Lighting System
+
+This project is a simple motion detection system using two PIR (Passive Infrared)
+sensors and LEDs. When motion is detected by either sensor, the corresponding LED lights up, and a message is printed to the serial monitor.
+This project will evolve into a staircase lighting solution. 🚶‍♂️💡
 
 📄 [Back to main README](../README.MD)
-## Description
-This project is a simple motion detection system using two PIR (Passive Infrared) 
-sensors and LEDs. When motion is detected by either sensor, the corresponding LED lights up, and a message is printed to the serial monitor.
-This project will evolve into a staircase lighting solution.
+
+![C++](https://img.shields.io/badge/C++-11-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 
 ## Table of Contents
 - [Features](#features)
@@ -14,55 +18,82 @@ This project will evolve into a staircase lighting solution.
 - [Installation Steps](#installation-steps)
 - [System Operation](#system-operation)
 - [Debugging](#debugging)
-- [Future Improvements](#future-improvements)
+- [Security Notes](#security-notes)
+- [Maintenance](#maintenance)
 
-## Features
-- Uses two PIR sensors to detect motion.
-- Two LED indicators to signal detected motion.
-- Serial output messages for debugging.
-- Simple and efficient motion tracking.
+
+## **Features**
+
+✅ **Motion detection via PIR sensors to activate LED lighting.**  
+✅ **Directional lighting based on movement direction.**  
+✅ **Auto turn-off after a predefined delay to save power.**  
+✅ **Configurable LED sequences for smooth illumination.**  
+✅ **Serial debugging for monitoring sensor states.**  
 
 ## Hardware Requirements
-- 1x Arduino (Uno, Mega, etc.)
-- 2x PIR sensors
-- 2x LEDs
-- 2x 220Ω resistors
+- Arduino board (Uno, Mega, or equivalent)
+- 2x PIR sensors (for detecting movement direction)
+- 2x LED strips or individual LEDs (or as many as you would like)
+- 2x 220Ω resistors (for LEDs if necessary, same amount as LEDs)
 - Jumper wires
 - Breadboard
+- USB cable (for programming)
 
 ## Pin Connections
-```
-PIR Sensor 1 (Up) → Pin 2
-PIR Sensor 2 (Down) → Pin 3
-LED 1 (Up) → Pin 13 (with 220Ω resistor)
-LED 2 (Down) → Pin 12 (with 220Ω resistor)
-VCC (both sensors) → 5V
-GND (both sensors) → GND
-```
 
+| Component         | Arduino Pin |
+|-------------------|-------------|
+| PIR Sensor (Up)   | D2          |
+| PIR Sensor (Down) | D3          |
+| LED 1             | D12         |
+| LED 2             | D13         |
+| VCC (PIR, LED)    | 5V          |
+| GND (PIR, LED)    | GND         |
+
+![WiringDiagram.png](WiringDiagram.png)
 ## Software Requirements
 - Arduino IDE
 
 ## Installation Steps
-1. Open the Arduino IDE.
-2. Download the file staircaselighting.ino, and open it in Arduino IDE.
-3. Connect your Arduino to the computer and upload the code.
-4. Open the Serial Monitor (9600 baud) to see motion detection logs.
+1. Connect the components according to the wiring diagram.
+2. Install and open the Arduino IDE.
+3. Download the file staircaselighting.ino, and open it in Arduino IDE.
+4. Select the correct board and COM port.
+5. Upload the code to the Arduino.
+6. Open the Serial Monitor (9600 baud) to observe debugging messages.
 
 ## System Operation
-- When motion is detected by the upper PIR sensor, the LED at pin 13 lights up, and a message is printed.
-- When motion is detected by the lower PIR sensor, the LED at pin 12 lights up, and a message is printed.
-- The system continuously checks for motion every 100ms.
+⚙️ How It Works:
+- The system continuously monitors the PIR sensors.
+- When a person moves up, LEDs light up in an upward sequence.
+- When a person moves down, LEDs light up in a downward sequence.
+- LEDs turn off automatically after 10 seconds.
+- Serial output displays sensor status and process updates.
 
 ## Debugging
-- Ensure PIR sensors are properly connected and powered.
-- Open Serial Monitor to see sensor readings.
-- Adjust PIR sensor sensitivity and delay settings if needed.
+🔍 Serial Debugging (9600 baud rate)
+- Monitors:
+    - PIR sensor states before activation
+    - Triggered light sequences
+    - Completion of light loop
 
 ## Future Improvements
 - Add a buzzer for audible alerts.
 - Implement a time delay to prevent false triggers.
 - Use wireless communication (e.g., ESP8266) to send motion alerts to a mobile app.
 
----
-🚀 **Enjoy your motion detection system!**
+## Security Notes
+🔐 Best Practices:
+✔ Ensure proper wiring to avoid short circuits.  
+✔ Use resistors with LEDs to prevent overcurrent.  
+✔ Secure PIR sensors to avoid misalignment.  
+✔ Adjust sensor sensitivity if needed to reduce false triggers.  
+
+## Maintenance
+🛠 Routine Checks:
+- Verify PIR sensor alignment.
+- Inspect LED connections for wear or looseness.
+- Monitor serial output for potential errors.
+- Adjust delays if necessary for better user experience.
+
+🚀 **Enjoy your motion activated staircase lighting system!**
