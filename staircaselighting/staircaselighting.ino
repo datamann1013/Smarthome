@@ -1,46 +1,45 @@
-  
-int ledPinOpp=13;
-int ledPinNed=12;
-int pirPinOpp=2;
-int pirPinNed=3;
-int pirStatOpp=0;
-int pirStatNed=0;  
-  
-void setup() {
-pinMode(ledPinOpp,OUTPUT);
-pinMode(ledPinNed,OUTPUT);
 
-pinMode(pirPinOpp,INPUT);
-pinMode(pirPinNed,INPUT);
+int pirPinUp=2;
+int pirPinDown=3;
+bool pirStatUp=false;
+bool pirStatNed=false;  
+  
+int LEDPins[] = {12,13};
+int numberOfElements = sizeof(LEDPins) / sizeof(LEDPins[0]);
+void setup() {
+pinMode(12,OUTPUT);
+pinMode(13,OUTPUT);
+
+pinMode(pirPinUp,INPUT);
+pinMode(pirPinDown,INPUT);
 
 Serial.begin(9600);
+Serial.println(numberOfElements);
 }
 
 void loop() {
-  pirStatOpp=digitalRead(pirPinOpp);
-  pirStatNed=digitalRead(pirPinNed);
+  pirStatUp=digitalRead(pirPinUp);
+  delay(1000);
+  //pirStatDown=digitalRead(pirPinNDown);
+  Serial.print("Value before if: ");
+  Serial.println(pirStatUp);
 
-  if (pirStatOpp== HIGH) {
-    digitalWrite(ledPinOpp,HIGH);
-    Serial.println("Så deg opp");
-    delay(100);
-  }
-  else {
-    digitalWrite(ledPinOpp,LOW);
-    Serial.println("Så deg ikke Opp");
-    delay(100);
-  }
+  if (pirStatUp == HIGH){
+  //Serial.println(numberOfElements);
+  delay(500);
+     for(int i = 0; i < numberOfElements ; i++){
+      digitalWrite(LEDPins[i] ,HIGH);
+      Serial.println("Active up");
+       delay(1000);
+    }
 
-  if (pirStatNed== HIGH) {
-    digitalWrite(ledPinNed,HIGH);
-    Serial.println("Så deg ned");
-    delay(100);
   }
-  else {
-    digitalWrite(ledPinNed,LOW);
-    Serial.println("Så deg ikke ned");
-    delay(100);
+  else{
+    digitalWrite(12,LOW);
+    digitalWrite(13,LOW);
+    delay(1000);
   }
-
-
+ 
+Serial.println("Round over");
 }
+
