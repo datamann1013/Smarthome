@@ -8,8 +8,9 @@ bool pirStatOpp = false;
 bool pirStatNed = false;  
   
 //Values for the logic about light
-int LEDPins[] = {12,13}; //Change in here for light pins for steps
-int numberOfElements = sizeof(LEDPins) / sizeof(LEDPins[0]);
+int LEDPinsUp[] = {12,13}; //Change in here for light pins for steps
+int LEDPinsDown[] = {13,12}; // Needs to be the excact opposite of LedPinsUp
+int numberOfElements = sizeof(LEDPinsUp) / sizeof(LEDPinsUp[0]);
 
 void setup() {
   //Output LED
@@ -32,6 +33,7 @@ void loop() {
   pirStatOpp=digitalRead(pirPinUp);
   pirStatNed=digitalRead(pirPinDown);
 
+  //Check of values before this iteration
   Serial.print("Value bool up before process: ");
   Serial.print(pirStatOpp);
   Serial.print(", and bool down: ");
@@ -39,10 +41,18 @@ void loop() {
 
   //Statement to check if the sensor is triggered to turn on lights
   if (pirStatOpp == HIGH){ 
-    lightloop(1,1);
+    lightloop(1,LEDPinsUp);
     //Delay between turn on and turn off
     delay(10000);
-    lightloop(0,1);
+    lightloop(0,LEDPinsUp);
+    Serial.println("For loop done");
+    delay(1000);
+  }
+  else if (pirStatNed == HIGH){ 
+    lightloop(1,LEDPinsDown);
+    //Delay between turn on and turn off
+    delay(10000);
+    lightloop(0,LEDPinsDown);
     Serial.println("For loop done");
     delay(1000);
   }
@@ -65,7 +75,7 @@ void lightloop(int turn, int array[]) {
   }
   //Loop for turning on/off light
   for(int i = 0; i < numberOfElements ; i++){
-      digitalWrite(LEDPins[i] ,val);
+      digitalWrite(array[i] ,val);
       delay(1000);
     }
 }
