@@ -35,6 +35,14 @@ The Smart House system will include:
 
 This project consists of multiple subsystems that work together.
 
+## 🔍 Component Testing 🛠
+- A set of individual tests for verifying the functionality of key system components.
+- Includes tests for motion sensors, LED control, and other hardware elements.
+- Helps ensure proper operation before integrating into the full system.
+- Serial monitor output for real-time debugging and validation.
+
+More details:  [Component Tests README](partstesting/README.md)
+
 ### 1️⃣ Smart Plant Monitoring System 🌱
 
 - A system that monitors soil moisture levels and controls watering automatically.
