@@ -93,3 +93,5 @@ void verifyStoredCredentials() {
   Serial.println("Stored SSID: " + String(storedSSID));
   Serial.println("Stored Password: " + String(storedPass));
 }
+
+void loop(){}
