@@ -1,11 +1,18 @@
+// Standalone EEPROM writer sketch
+// Edit the three placeholders below, then open this file as a sketch in the
+// Arduino IDE (or move it to its own folder) and upload to the ESP8266 to
+// write encrypted credentials into EEPROM.
+
 #include <EEPROM.h>
 
-// Your credentials here
-const char BLYNK_AUTH[] = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-const char WIFI_SSID[]  = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-const char WIFI_PASS[]  = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+// --- EDIT THESE BEFORE UPLOADING ---
+// Put your real Blynk auth token, WiFi SSID and WiFi password here.
+const char BLYNK_AUTH[] = "PUT_BLYNK_AUTH_HERE";
+const char WIFI_SSID[]  = "PUT_YOUR_SSID_HERE";
+const char WIFI_PASS[]  = "PUT_YOUR_WIFI_PASS_HERE";
+// -----------------------------------
 
-// Fixed sizes
+// Fixed sizes (must match main sketch)
 const int EEPROM_SIZE = 512;
 const int AUTH_ADDR = 0;
 const int AUTH_SIZE = 33;
@@ -14,8 +21,8 @@ const int SSID_SIZE = 33;
 const int PASS_ADDR = SSID_ADDR + SSID_SIZE;
 const int PASS_SIZE = 65;
 
-// Encryption key (change this to your own random value)
-const byte encryptionKey = 0xA7;  // Example key
+// Encryption key (change to your own random value if desired)
+const byte encryptionKey = 0xA7;
 
 byte encryptByte(byte data) {
   return data ^ encryptionKey;
@@ -25,30 +32,10 @@ byte decryptByte(byte data) {
   return data ^ encryptionKey;
 }
 
-void setup() {
-  Serial.begin(115200);
-  EEPROM.begin(EEPROM_SIZE);
-  
-  Serial.println("Starting EEPROM write with encryption...");
-  
-  writeEncrypted(AUTH_ADDR, BLYNK_AUTH, AUTH_SIZE);
-  writeEncrypted(SSID_ADDR, WIFI_SSID, SSID_SIZE);
-  writeEncrypted(PASS_ADDR, WIFI_PASS, PASS_SIZE);
-
-  if (EEPROM.commit()) {
-    Serial.println("Encrypted credentials written successfully!");
-  } else {
-    Serial.println("ERROR! EEPROM commit failed");
-  }
-
-  Serial.println("\nVerifying stored encrypted credentials:");
-  verifyStoredCredentials();
-}
-
 void writeEncrypted(int startAddr, const char* input, int maxLen) {
-  int len = std::min<size_t>(strlen(input), static_cast<size_t>(maxLen - 1));
+  int len = min((size_t)strlen(input), (size_t)(maxLen - 1));
   for (int i = 0; i < len; i++) {
-    EEPROM.write(startAddr + i, encryptByte(input[i]));
+    EEPROM.write(startAddr + i, encryptByte((byte)input[i]));
   }
   EEPROM.write(startAddr + len, encryptByte('\0'));
   for (int i = len + 1; i < maxLen; i++) {
@@ -58,9 +45,9 @@ void writeEncrypted(int startAddr, const char* input, int maxLen) {
 
 void readDecrypted(int startAddr, char* output, int maxLen) {
   for (int i = 0; i < maxLen - 1; i++) {
-    output[i] = decryptByte(EEPROM.read(startAddr + i));
+    output[i] = (char)decryptByte(EEPROM.read(startAddr + i));
   }
-  output[maxLen - 1] = '\0';  // Ensure null-termination
+  output[maxLen - 1] = '\0';
 }
 
 void verifyStoredCredentials() {
@@ -77,4 +64,31 @@ void verifyStoredCredentials() {
   Serial.println("Stored Password: " + String(storedPass));
 }
 
-void loop() {}
+void setup() {
+  Serial.begin(115200);
+  Serial.println("EEPROM Writer starting...");
+
+  EEPROM.begin(EEPROM_SIZE);
+  delay(50);
+
+  Serial.println("Writing encrypted credentials to EEPROM...");
+  writeEncrypted(AUTH_ADDR, BLYNK_AUTH, AUTH_SIZE);
+  writeEncrypted(SSID_ADDR, WIFI_SSID, SSID_SIZE);
+  writeEncrypted(PASS_ADDR, WIFI_PASS, PASS_SIZE);
+
+  if (EEPROM.commit()) {
+    Serial.println("Encrypted credentials written successfully!");
+  } else {
+    Serial.println("ERROR: EEPROM commit failed");
+  }
+
+  Serial.println("Verifying stored credentials:");
+  verifyStoredCredentials();
+
+  Serial.println("Done. You can now upload the main sketch.");
+}
+
+void loop() {
+  // Nothing to do. This sketch writes once on boot and then idles.
+  delay(1000);
+}
