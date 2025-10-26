@@ -297,6 +297,11 @@ void setup() {
 
   // Sync time with Blynk server
   setSyncInterval(24 * 60 * 60); // Sync every day
+
+  WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
+  WiFi.setOutputPower(10.5); // Reduce TX power (0-20.5 dBm);
+  WiFi.setAutoConnect(true);
+  WiFi.setAutoReconnect(true);
 }
 
 void enterDeepSleep() {
