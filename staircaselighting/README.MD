@@ -1,8 +1,8 @@
 # PIR-Based Staircase Lighting System
 
-This project is a simple motion detection system using two PIR (Passive Infrared)
-sensors and LEDs. When motion is detected by either sensor, the corresponding LED lights up, and a message is printed to the serial monitor.
-This project will evolve into a staircase lighting solution. 🚶‍♂️💡
+Motion-activated staircase lighting for 12 steps. Two PIR sensors detect which
+end someone entered from; the steps light up one by one in that direction, stay
+on while motion continues, then switch off step by step in the direction walked.
 
 📄 [Back to main README](../README.MD)
 
@@ -17,83 +17,111 @@ This project will evolve into a staircase lighting solution. 🚶‍♂️💡
 - [Software Requirements](#software-requirements)
 - [Installation Steps](#installation-steps)
 - [System Operation](#system-operation)
+- [Serial Commands](#serial-commands)
 - [Debugging](#debugging)
 - [Security Notes](#security-notes)
 - [Maintenance](#maintenance)
 
+## Features
 
-## **Features**
-
-✅ **Motion detection via PIR sensors to activate LED lighting.**  
-✅ **Directional lighting based on movement direction.**  
-✅ **Auto turn-off after a predefined delay to save power.**  
-✅ **Configurable LED sequences for smooth illumination.**  
-✅ **Serial debugging for monitoring sensor states.**  
+✅ **Directional sweep** — bottom sensor lights steps bottom→top, top sensor lights top→bottom.
+✅ **Direction locked per cycle** — no mid-cycle flip; predictable for one person at a time.
+✅ **Hold while moving** — any sensor extends the on-time; lights stay on as long as someone moves.
+✅ **Re-trigger during switch-off** — new motion mid-off-sweep re-lights straight away; steps still on stay on.
+✅ **Follow-you off** — lights switch off in the direction you walked.
+✅ **Safety cut-off** — everything off after 5 min if a sensor is stuck on (sun, heater).
+✅ **Hard on/off via relays** — no fading, 12 steps, one relay per step.
+✅ **Serial debugging** — fake motion, force states, query status over USB.
 
 ## Hardware Requirements
-- Arduino board (Uno, Mega, or equivalent)
-- 2x PIR sensors (for detecting movement direction)
-- 2x LED strips or individual LEDs (or as many as you would like)
-- 2x 220Ω resistors (for LEDs if necessary, same amount as LEDs)
-- Jumper wires
-- Breadboard
-- USB cable (for programming)
+- Arduino Uno R3
+- 16-channel relay board (SRD-12VDC relays) — channels 1–12 used, 13–16 spare
+- 2× HC-SR501 PIR sensors (bottom + top of stairs)
+- 12× LED strips (one per step), 5 V supply sized for your strips
+- 12 V supply (≥1 A, 2 A comfortable) for the relay board
+- Jumper wires; shared ground between Uno and relay board
 
 ## Pin Connections
 
-| Component         | Arduino Pin |
-|-------------------|-------------|
-| PIR Sensor (Up)   | D2          |
-| PIR Sensor (Down) | D3          |
-| LED 1             | D12         |
-| LED 2             | D13         |
-| VCC (PIR, LED)    | 5V          |
-| GND (PIR, LED)    | GND         |
+| Uno pin | Goes to | Note |
+|---------|---------|------|
+| D2 … D12 | Relay IN1 … IN11 (steps 1–11) | Step 1 = bottom |
+| A0 | Relay IN12 (step 12, top) | Analog pin as digital output |
+| A1 | Bottom PIR OUT | |
+| A2 | Top PIR OUT | |
+| A3 | free | Light sensor later ("only when dark") |
+| A4 / A5 | free (I2C) | PCF8575 / LCD later |
+| D0 / D1 | USB serial | Debug now; Zigbee module later |
+| D13 | **not used** | Bootloader blinks it at reset → would click a relay |
+| 5V / GND | Both PIRs VCC / GND | PIRs draw almost nothing |
 
 ![WiringDiagram.png](WiringDiagram.png)
+
+> Note: the wiring diagram above is from the 2-LED prototype and is stale for v1.
+> Trust the pin table above until the diagram is redrawn.
+
 ## Software Requirements
-- Arduino IDE
+- Arduino IDE (1.8+ or 2.x)
 
 ## Installation Steps
-1. Connect the components according to the wiring diagram.
-2. Install and open the Arduino IDE.
-3. Download the file staircaselighting.ino, and open it in Arduino IDE.
-4. Select the correct board and COM port.
-5. Upload the code to the Arduino.
-6. Open the Serial Monitor (9600 baud) to observe debugging messages.
+1. Wire the components per the pin table above.
+2. Open `staircaselighting.ino` in the Arduino IDE.
+3. Select **Arduino Uno** and the correct COM port.
+4. For a first bench test without PIRs: set `USE_PIRS = false`, upload, open Serial Monitor at **115200 baud**, type `t`.
+5. Add the relay board (12 V on, shared GND, IN1–IN12). Run `t`: relays 1→12 click in order. If inverted, set `RELAY_ACTIVE_LOW = false`.
+6. Add the PIRs, set `USE_PIRS = true`, wait out the 45 s warm-up, wave at each sensor.
 
 ## System Operation
-⚙️ How It Works:
-- The system continuously monitors the PIR sensors.
-- When a person moves up, LEDs light up in an upward sequence.
-- When a person moves down, LEDs light up in a downward sequence.
-- LEDs turn off automatically after 10 seconds.
-- Serial output displays sensor status and process updates.
+A non-blocking state machine runs the show (no `delay()` in the main loop):
+
+```
+IDLE → SWEEP_ON → HOLD → SWEEP_OFF → IDLE
+```
+
+- **IDLE**: all steps off. First PIR to fire starts a cycle; direction is set by which sensor (bottom→UP, top→DOWN) and locked for the whole cycle. Tie-break: bottom wins.
+- **SWEEP_ON**: light one step every `STEP_DELAY_MS` (250 ms) in the locked direction. On reaching the far end → HOLD.
+- **HOLD**: all steps on. Any motion resets the hold timer. After `HOLD_MS` (20 s) with no motion → SWEEP_OFF.
+- **SWEEP_OFF**: turn off one step every `STEP_DELAY_MS`, in the direction walked (follow-you). On reaching the far end → IDLE.
+
+**Re-trigger:** if motion arrives during SWEEP_OFF, the system jumps back to SWEEP_ON (same direction) and re-sweeps from the start. Steps that are still on stay on (idempotent writes); only the off ones light up again.
+
+**Safety:** if a cycle stays active longer than `MAX_ON_MS` (5 min) — e.g. a sensor stuck on from sun or a heater — everything goes off and the system returns to IDLE.
+
+## Serial Commands
+Open Serial Monitor at **115200 baud**. Commands are single characters (no line ending needed):
+
+| Key | Action |
+|-----|--------|
+| `u` | Fake bottom-sensor motion |
+| `d` | Fake top-sensor motion |
+| `o` | All steps on → HOLD (times out normally) |
+| `x` | All steps off → IDLE |
+| `t` | Test chase 1→12 (blocking) |
+| `?` | Print current state |
+
+During an active cycle, `u`/`d` count as motion (extend hold or reignite; direction does not flip). To force a direction, send `x` then `u`/`d`. These commands are also the hook for the Zigbee controller in v2.
 
 ## Debugging
-🔍 Serial Debugging (9600 baud rate)
-- Monitors:
-    - PIR sensor states before activation
-    - Triggered light sequences
-    - Completion of light loop
+Serial output at 115200 baud:
+- State transitions (`-> SWEEP_ON UP`, `-> HOLD`, `-> SWEEP_OFF DOWN`, `-> IDLE`).
+- Safety trips (`SAFETY: max-on reached, all off`).
+- `?` for a full status snapshot (state, direction, step index, sensor states).
 
-## Future Improvements
-- Add a buzzer for audible alerts.
-- Implement a time delay to prevent false triggers.
-- Use wireless communication (e.g., ESP8266) to send motion alerts to a mobile app.
+## Future Improvements (v2+)
+- **"Only when dark":** LDR + 10 k resistor on A3.
+- **LCD:** PCF8575 (or PCF8574 backpack) on A4/A5 for status + buttons.
+- **16 steps:** move relays to the PCF8575 on I2C, freeing Uno pins.
+- **Smart follow:** let the opposite sensor flip the sweep direction mid-cycle (currently locked).
+- **Zigbee:** ESP32-C6/H2 sending `u`/`d`/`o`/`x` over serial.
 
 ## Security Notes
-🔐 Best Practices:
-✔ Ensure proper wiring to avoid short circuits.  
-✔ Use resistors with LEDs to prevent overcurrent.  
-✔ Secure PIR sensors to avoid misalignment.  
-✔ Adjust sensor sensitivity if needed to reduce false triggers.  
+✔ Use **NO** contacts so lights stay off if the relay board loses power.
+✔ Keep JD1–JD16 jumpers all the same (high/low trigger per channel).
+✔ Shared ground between Uno and relay board — without it, control signals don't work.
+✔ 12 V and 5 V supplies are separate; only the relay contacts carry the 5 V LED current.
 
 ## Maintenance
-🛠 Routine Checks:
-- Verify PIR sensor alignment.
-- Inspect LED connections for wear or looseness.
-- Monitor serial output for potential errors.
-- Adjust delays if necessary for better user experience.
-
-🚀 **Enjoy your motion activated staircase lighting system!**
+- Verify PIR alignment (each aimed at its own end, away from heaters/windows).
+- Re-tune `STEP_DELAY_MS`, `HOLD_MS` and PIR sensitivity on the real stairs.
+- Check serial output for unexpected SAFETY trips (indicates a stuck/misaimed sensor).
+- Inspect relay and strip wiring for heat or looseness.
